@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Latency Display</title>
+    <style>
+      #latency-display {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 5px;
+        font-size: 14px;
+        z-index: 10;
+      }
+      #video-container {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+      }
+      video {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="video-container">
+      <video id="video" controls></video>
+      <div id="latency-display">지연시간: 0ms</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <script>
+      const video = document.getElementById("video");
+      const latencyDisplay = document.getElementById("latency-display");
+
+      const videoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+      let segmentLoadTime = 0;
+      let latencyCalculated = false;
+
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.FRAG_LOADED, (event, data) => {
+          if (!latencyCalculated) {
+            segmentLoadTime = performance.now();
+            let latencyCalculated = false;
+          }
+        });
+
+        video.addEventListener("timeupdate", () => {
+          if (!latencyCalculated && video.currentTime > 0) {
+            const segmentPlayTime = performance.now();
+            const latency = segmentPlayTime - segmentLoadTime;
+            latencyDisplay.innerText = `지연시간 ${latency.toFixed(2)} ms`;
+            latencyCalculated = true;
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
